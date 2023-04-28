@@ -1,7 +1,13 @@
 const mongoose = require('mongoose');
 const passportLocalMongoose = require('passport-local-mongoose');
+const noblox = require('noblox.js');
 
 const member = new mongoose.Schema({
+    username: {
+        type: String,
+        required: false,
+        unique: true,
+    },
     robloxId: {
         type: Number,
         required: true,
@@ -17,12 +23,13 @@ const member = new mongoose.Schema({
     },
     infamy: {
         type: mongoose.Decimal128,
-        required: true,
+        required: false,
         default: 0,
     },
 });
 member.pre('save', async function (next) {
     this.infamy = 0;
+    this.username = await noblox.getUsernameFromId(this.robloxId);
     next();
 });
 
