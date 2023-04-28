@@ -32,7 +32,9 @@ class InfamyService extends GenericService {
             for (const username of usernames) {
                 try {
                     const robloxId = await noblox.getIdFromUsername(username);
-                    await this.addInfamy(robloxId, infamyToAdd);
+                    if(robloxId) {
+                        await this.addInfamy(robloxId, infamyToAdd);
+                    }
                 } catch (error) {
                     errorMessages.push({
                         username: username,
