@@ -73,6 +73,82 @@ router.post('/bulkAddInfamy', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/infamy/{username}:
+ *   get:
+ *     summary: Get infamy for a member by username
+ *     tags: [Infamy]
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         description: The username of the member to get infamy for
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 infamy:
+ *                   type: number
+ *                   format: decimal
+ *                   description: The infamy for the member
+ *       404:
+ *         description: Member not found
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/:username', async (req, res) => {
+    try {
+        const infamy = await infamyService.getInfamyByUsername(req.params.username);
+        res.status(200).json({ infamy });
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/infamy/top:
+ *   get:
+ *     summary: Get top 10 members with most infamy
+ *     tags: [Infamy]
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   username:
+ *                     type: integer
+ *                     format: int32
+ *                     description: The Roblox ID of the member
+ *                   infamy:
+ *                     type: number
+ *                     format: decimal
+ *                     description: The infamy of the member
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/top', async (req, res) => {
+    try {
+        const topInfamy = await infamyService.getTopInfamy();
+        res.status(200).json(topInfamy);
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({ message: error.message });
+    }
+});
 
 
 

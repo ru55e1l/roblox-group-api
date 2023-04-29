@@ -48,6 +48,32 @@ class InfamyService extends GenericService {
         }
     }
 
+    async getTopInfamy() {
+        try {
+            const members = await memberService.getDocumentByField({}, '-infamy', 10, { infamy: -1 });
+            return members.map(member => ({
+                username: member.robloxId,
+                infamy: parseFloat(member.infamy.toString()),
+            }));
+        } catch (error) {
+            throw new Error(`Error getting top infamy: ${error.message}`);
+        }
+    }
+
+    async getInfamyByUsername(username) {
+        try {
+            const robloxId = await noblox.getIdFromUsername(username);
+            const member = await memberService.getDocumentByField({ robloxId });
+            if (!member) {
+                throw new Error(`Member not found for username ${username}`);
+            }
+            return member.infamy;
+        } catch (error) {
+            throw new Error(`Error getting infamy for username ${username}: ${error.message}`);
+        }
+    }
+
+
 
 }
 
