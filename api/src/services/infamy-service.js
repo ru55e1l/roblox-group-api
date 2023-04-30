@@ -2,16 +2,44 @@ const Member = require('../models/member');
 const GenericService = require('./generic-service');
 const memberService = require('./member-service');
 const noblox = require('noblox.js');
+const Ranks = require('../constants/infamyToRank');
+const mongoose = require('mongoose');
+
 class InfamyService extends GenericService {
     constructor() {
         super(Member);
     }
 
+    async updateRankBasedOnInfamy(robloxId, infamy) {
+        const currentRankName = await noblox.getRankNameInGroup(process.env.GROUPID, robloxId);
+        const currentRank = await noblox.getRankInGroup(process.env.GROUPID, robloxId);
+        const infamyDecimal = new mongoose.Types.Decimal128(infamy.toString());
+
+        if (currentRank < 34) {
+            let newRankName = "Privateer";
+
+            for (const [rankName, rankInfamy] of Object.entries(Ranks)) {
+                if (parseFloat(infamyDecimal.toString()) >= rankInfamy) {
+                    newRankName = rankName;
+                } else {
+                    break;
+                }
+            }
+
+            if (newRankName !== currentRankName) {
+                await noblox.setRank(process.env.GROUPID, robloxId, newRankName);
+            }
+        }
+    }
+
+
+
     async addInfamy(robloxId, infamyToAdd) {
         try {
-            let existingMember = await this.getDocumentByField({robloxId: robloxId});
-            if(!existingMember) {
-                if(await memberService.verifyUserInGroup(robloxId)) {
+            let existingMember = await this.getDocumentByField({ robloxId: robloxId });
+
+            if (!existingMember) {
+                if (await memberService.verifyUserInGroup(robloxId)) {
                     const newMember = new Member({
                         robloxId: robloxId,
                     });
@@ -19,12 +47,34 @@ class InfamyService extends GenericService {
                 }
             }
 
-            existingMember.infamy = existingMember.infamy + infamyToAdd;
+            // Parse infamyToAdd as a number
+            const parsedInfamyToAdd = parseFloat(infamyToAdd);
+            existingMember.infamy = parseFloat(existingMember.infamy) + parsedInfamyToAdd;
+
+            await this.updateRankBasedOnInfamy(robloxId, existingMember.infamy);
             return await this.updateDocumentById(existingMember.id, existingMember);
-        }catch(error) {
-            throw error
+        } catch (error) {
+            throw error;
         }
     }
+
+    async removeInfamy(robloxId, infamyToRemove) {
+        try {
+            let existingMember = await this.getDocumentByField({ robloxId: robloxId });
+
+            if (!existingMember) {
+                throw new Error(`Member not found`);
+            }
+            const parsedInfamyToRemove = parseFloat(infamyToRemove);
+            existingMember.infamy = Math.max(0, parseFloat(existingMember.infamy) - parsedInfamyToRemove);
+            await this.updateRankBasedOnInfamy(robloxId, existingMember.infamy);
+            return await this.updateDocumentById(existingMember.id, existingMember);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+
 
     async bulkAddInfamy(usernames, infamyToAdd) {
         try {
@@ -47,6 +97,29 @@ class InfamyService extends GenericService {
             console.log(error.message);
         }
     }
+
+    async bulkRemoveInfamy(usernames, infamyToRemove) {
+        try {
+            const errorMessages = [];
+            for (const username of usernames) {
+                try {
+                    const robloxId = await noblox.getIdFromUsername(username);
+                    if (robloxId) {
+                        await this.removeInfamy(robloxId, infamyToRemove);
+                    }
+                } catch (error) {
+                    errorMessages.push({
+                        username: username,
+                        message: error.message,
+                    });
+                }
+            }
+            return { errorMessages };
+        } catch (error) {
+            console.log(error.message);
+        }
+    }
+
 
     async getTopInfamy() {
         try {

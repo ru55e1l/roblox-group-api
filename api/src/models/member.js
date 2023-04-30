@@ -15,7 +15,7 @@ const member = new mongoose.Schema({
     },
     discordId: {
         type: Number,
-        required: true,
+        required: false,
         unique: true,
     },
     Birthday: {

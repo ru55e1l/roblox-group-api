@@ -75,6 +75,69 @@ router.post('/bulkAddInfamy', async (req, res) => {
 
 /**
  * @swagger
+ * /api/infamy/bulkRemoveInfamy:
+ *   post:
+ *     summary: Remove infamy from multiple members
+ *     tags: [Infamy]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       description: Usernames and infamy to remove
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               usernames:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: The usernames of the members to remove infamy from
+ *               infamyToRemove:
+ *                 type: number
+ *                 format: decimal
+ *                 description: The amount of infamy to remove from each member
+ *             required:
+ *               - usernames
+ *               - infamyToRemove
+ *     responses:
+ *       200:
+ *         description: Infamy removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errorMessages:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       username:
+ *                         type: string
+ *                       message:
+ *                         type: string
+ *               description: Array of error messages for failed infamy removals
+ *       400:
+ *         description: Invalid request body
+ *       500:
+ *         description: Internal Server Error
+ */
+router.post('/bulkRemoveInfamy', async (req, res) => {
+    try {
+        const { usernames, infamyToRemove } = req.body;
+        const result = await infamyService.bulkRemoveInfamy(usernames, infamyToRemove);
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+
+/**
+ * @swagger
  * /api/infamy/getInfamy/{username}:
  *   get:
  *     summary: Get infamy for a member by username
