@@ -75,7 +75,7 @@ router.post('/bulkAddInfamy', async (req, res) => {
 
 /**
  * @swagger
- * /api/infamy/{username}:
+ * /api/infamy/getInfamy/{username}:
  *   get:
  *     summary: Get infamy for a member by username
  *     tags: [Infamy]
@@ -103,7 +103,7 @@ router.post('/bulkAddInfamy', async (req, res) => {
  *       500:
  *         description: Internal Server Error
  */
-router.get('/:username', async (req, res) => {
+router.get('/getInfamy/:username', async (req, res) => {
     try {
         const infamy = await infamyService.getInfamyByUsername(req.params.username);
         res.status(200).json({ infamy });

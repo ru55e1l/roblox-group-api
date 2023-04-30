@@ -50,9 +50,12 @@ class InfamyService extends GenericService {
 
     async getTopInfamy() {
         try {
-            const members = await memberService.getDocumentByField({}, '-infamy', 10, { infamy: -1 });
-            return members.map(member => ({
-                username: member.robloxId,
+            const members = await this.getAllDocuments();
+            const sortedMembers = members.sort((a, b) => b.infamy - a.infamy);
+            const topMembers = sortedMembers.slice(0, 10);
+
+            return topMembers.map(member => ({
+                username: member.username,
                 infamy: parseFloat(member.infamy.toString()),
             }));
         } catch (error) {
@@ -60,10 +63,11 @@ class InfamyService extends GenericService {
         }
     }
 
+
     async getInfamyByUsername(username) {
         try {
             const robloxId = await noblox.getIdFromUsername(username);
-            const member = await memberService.getDocumentByField({ robloxId });
+            const member = await memberService.getDocumentByField({ robloxId: robloxId });
             if (!member) {
                 throw new Error(`Member not found for username ${username}`);
             }
