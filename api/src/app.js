@@ -13,6 +13,7 @@ const noblox = require('noblox.js');
 // routes
 const memberRouter = require('./routes/member-router');
 const infamyRouter = require('./routes/infamy-router');
+const userRouter = require('./routes/user-router');
 
 const app = express();
 app.use(cookieParser(process.env.SECRET))
@@ -24,7 +25,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 // Use trainerRouter middleware
 app.use('/api/member', memberRouter);
 app.use('/api/infamy', infamyRouter);
-
+app.use('/api/user', userRouter)
 
 
 mongoose.connect(process.env.DB_CONNECTION_STRING, { useNewUrlParser: true, useUnifiedTopology: true })

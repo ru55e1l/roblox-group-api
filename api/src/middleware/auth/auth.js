@@ -1,10 +1,10 @@
-const trainerService = require('../../services/member-service');
+const userService = require('../../services/member-service');
 
 module.exports = async (req, res, next) => {
-    const trainerId = req.signedCookies.trainerId;
+    const userId = req.signedCookies.userId;
     const refreshToken = req.cookies.refreshToken;
 
-    if (!trainerId && !refreshToken) {
+    if (!userId && !refreshToken) {
         return res.status(401).send({
             ok: false,
             error: "Access denied. No cookies provided",
@@ -12,18 +12,18 @@ module.exports = async (req, res, next) => {
     }
 
     try {
-        if (!trainerId && refreshToken) {
-            const refreshTokenDoc = await trainerService.validateRefreshToken(refreshToken);
-            const newTrainerId = refreshTokenDoc.trainerId;
+        if (!userId && refreshToken) {
+            const refreshTokenDoc = await userService.validateRefreshToken(refreshToken);
+            const newUserId = refreshTokenDoc.userId;
 
             // Get the device identifier (User-Agent header in this case)
             const device = req.headers['user-agent'] || 'unknown';
 
             // Create a new refresh token for the specific device
-            const newRefreshToken = await trainerService.createRefreshToken(newTrainerId, device);
+            const newRefreshToken = await userService.createRefreshToken(newUserId, device);
 
             // Set the cookies
-            res.cookie('trainerId', newTrainerId, {
+            res.cookie('userId', newUserId, {
                 signed: true,
                 httpOnly: true,
                 maxAge: process.env.TRAINER_LIFE,
@@ -36,21 +36,21 @@ module.exports = async (req, res, next) => {
                 secure: process.env.NODE_ENV === 'production',
             });
 
-            req.signedCookies.trainerId = newTrainerId;
+            req.signedCookies.userId = newUserId;
         }
 
-        const trainer = await trainerService.getDocumentById(req.signedCookies.trainerId);
-        if (!trainer) {
+        const user = await userService.getDocumentById(req.signedCookies.userId);
+        if (!user) {
             return res.status(401).send({
                 ok: false,
-                error: "Invalid trainer ID",
+                error: "Invalid user ID",
             });
         }
-        req.trainer = trainer;
+        req.user = user;
     } catch (error) {
         return res.status(401).send({
             ok: false,
-            error: "Error fetching trainer",
+            error: "Error fetching user",
         });
     }
 
