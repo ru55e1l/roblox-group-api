@@ -17,7 +17,11 @@ const user = new mongoose.Schema({
         required: true,
         unique: false,
     },
-
+    roles: {
+        type: [String],
+        required: true,
+        default: ['user'],
+    },
 });
 user.pre('save', async function (next) {
 });
