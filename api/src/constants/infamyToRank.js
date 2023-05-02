@@ -1,10 +1,10 @@
 const Ranks = {
-    Privateer: 100,
-    Enforcer: 300,
-    Reaver: 600,
-    "Cut Throat": 1000,
-    Buccaneer: 1500,
-    Corsair: 3000,
+    Privateer: 0,
+    Enforcer: 25,
+    Reaver: 130,
+    "Cut Throat": 220,
+    Buccaneer: 320,
+    Corsair: 450,
 };
 
 module.exports = Ranks;

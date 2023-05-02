@@ -17,8 +17,6 @@ const infamyRouter = require('./routes/infamy-router');
 const app = express();
 app.use(cookieParser(process.env.SECRET))
 app.use(express.json()); // for parsing application/json
-const port = process.env.PORT || 1534;
-
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
@@ -37,6 +35,6 @@ noblox.setCookie(process.env.COOKIE).then(function() { //Use COOKIE from our .en
 }).catch(function(err) {
     console.log("Unable to log in!", err)
 })
-app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
-});
+
+
+module.exports = app;

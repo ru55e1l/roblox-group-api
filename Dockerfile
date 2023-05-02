@@ -20,4 +20,4 @@ COPY api .
 EXPOSE 1534
 
 # Run the application using npm
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]
