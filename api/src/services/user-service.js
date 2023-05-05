@@ -15,7 +15,6 @@ class UserService extends GenericService {
         const existingUser = await this.getDocumentByField({
             $or: [
                 { username: userData.username },
-                { email: userData.email },
             ],
         });
         if (existingUser) {

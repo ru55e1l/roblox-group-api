@@ -83,7 +83,7 @@ router.get('/', [auth, user], async (req, res) => {
  *       500:
  *         description: Internal Server Error
  */
-router.post('/signup', async (req, res) => {
+router.post('/signup', [auth, admin], async (req, res) => {
     try {
         // Call the userService to create a new user
         const user = await userService.createUser({

@@ -62,7 +62,7 @@ const { admin, user } = require("../middleware/auth/roles");
  *       500:
  *         description: Internal Server Error
  */
-router.post('/bulkAddInfamy', async (req, res) => {
+router.post('/bulkAddInfamy', auth, user, async (req, res) => {
     try {
         const { usernames, infamyToAdd } = req.body;
         const result = await infamyService.bulkAddInfamy(usernames, infamyToAdd);
@@ -124,7 +124,7 @@ router.post('/bulkAddInfamy', async (req, res) => {
  *       500:
  *         description: Internal Server Error
  */
-router.post('/bulkRemoveInfamy', async (req, res) => {
+router.post('/bulkRemoveInfamy',auth, user, async (req, res) => {
     try {
         const { usernames, infamyToRemove } = req.body;
         const result = await infamyService.bulkRemoveInfamy(usernames, infamyToRemove);
@@ -166,7 +166,7 @@ router.post('/bulkRemoveInfamy', async (req, res) => {
  *       500:
  *         description: Internal Server Error
  */
-router.get('/getInfamy/:username', async (req, res) => {
+router.get('/getInfamy/:username', auth, user, async (req, res) => {
     try {
         const infamy = await infamyService.getInfamyByUsername(req.params.username);
         res.status(200).json({ infamy });
@@ -203,7 +203,7 @@ router.get('/getInfamy/:username', async (req, res) => {
  *       500:
  *         description: Internal Server Error
  */
-router.get('/top', async (req, res) => {
+router.get('/top', auth, user, async (req, res) => {
     try {
         const topInfamy = await infamyService.getTopInfamy();
         res.status(200).json(topInfamy);

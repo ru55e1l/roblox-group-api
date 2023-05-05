@@ -1,4 +1,4 @@
-const userService = require('../../services/member-service');
+const userService = require('../../services/user-service');
 
 module.exports = async (req, res, next) => {
     const userId = req.signedCookies.userId;
