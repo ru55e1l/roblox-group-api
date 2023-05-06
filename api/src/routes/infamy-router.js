@@ -65,13 +65,19 @@ const { admin, user } = require("../middleware/auth/roles");
 router.post('/bulkAddInfamy', auth, user, async (req, res) => {
     try {
         const { usernames, infamyToAdd } = req.body;
+
+        if (!Array.isArray(usernames) || usernames.some(username => typeof username !== 'string') || typeof infamyToAdd !== 'number') {
+            throw new Error("Invalid input: 'usernames' must be an array of strings and 'infamyToAdd' must be a number.");
+        }
+
         const result = await infamyService.bulkAddInfamy(usernames, infamyToAdd);
         res.status(200).json(result);
-    } catch(error) {
+    } catch (error) {
         console.log(error.message);
         res.status(500).json({ message: error.message });
     }
 });
+
 
 /**
  * @swagger
@@ -124,9 +130,14 @@ router.post('/bulkAddInfamy', auth, user, async (req, res) => {
  *       500:
  *         description: Internal Server Error
  */
-router.post('/bulkRemoveInfamy',auth, user, async (req, res) => {
+router.post('/bulkRemoveInfamy', auth, user, async (req, res) => {
     try {
         const { usernames, infamyToRemove } = req.body;
+
+        if (!Array.isArray(usernames) || usernames.some(username => typeof username !== 'string') || typeof infamyToRemove !== 'number') {
+            throw new Error("Invalid input: 'usernames' must be an array of strings and 'infamyToRemove' must be a number.");
+        }
+
         const result = await infamyService.bulkRemoveInfamy(usernames, infamyToRemove);
         res.status(200).json(result);
     } catch (error) {
