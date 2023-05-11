@@ -4,6 +4,7 @@ const memberService = require('./member-service');
 const noblox = require('noblox.js');
 const Ranks = require('../constants/infamyToRank');
 const mongoose = require('mongoose');
+const infamyLogService = require('./infamyLog-service')
 
 class InfamyService extends GenericService {
     constructor() {
@@ -32,7 +33,15 @@ class InfamyService extends GenericService {
         }
     }
 
-
+    async updateLeaderboardRank(robloxId, newInfamy) {
+        const members = await Member.find();
+        const sortedMembers = members.sort((a, b) => parseFloat(b.infamy.toString()) - parseFloat(a.infamy.toString()));
+        let leaderboard = 1;
+        for (const member of sortedMembers) {
+            await Member.updateOne({ robloxId }, { leaderboard });
+            leaderboard++;
+        }
+    }
 
     async addInfamy(robloxId, infamyToAdd) {
         try {
@@ -44,6 +53,9 @@ class InfamyService extends GenericService {
                         robloxId: robloxId,
                     });
                     existingMember = await memberService.createMember(newMember);
+                }
+                else {
+                    throw new Error("User is not in group");
                 }
             }
 
@@ -76,45 +88,59 @@ class InfamyService extends GenericService {
 
 
 
-    async bulkAddInfamy(usernames, infamyToAdd) {
+    async bulkAddInfamy(apiUser, usernames, infamyToAdd) {
         try {
-            const errorMessages = [];
+            const result = {
+                username: apiUser,
+                infamyAmount: infamyToAdd,
+                successful: [],
+                error: [],
+                addInfamy: true
+            };
             for (const username of usernames) {
                 try {
                     const robloxId = await noblox.getIdFromUsername(username);
                     if(robloxId) {
                         await this.addInfamy(robloxId, infamyToAdd);
+                        result.successful.push(username);
                     }
+                    else {
+                        throw Error("User does not exist")
+                    }
+
                 } catch (error) {
-                    errorMessages.push({
-                        username: username,
-                        message: error.message,
-                    });
+                    result.error.push(`${username} - ${error.message}`);
                 }
             }
-            return { errorMessages };
+            await infamyLogService.createDocument(result);
+            return result ;
         } catch (error) {
             console.log(error.message);
         }
     }
 
-    async bulkRemoveInfamy(usernames, infamyToRemove) {
+    async bulkRemoveInfamy(apiUser, usernames, infamyToRemove) {
         try {
-            const errorMessages = [];
+            const result = {
+                username: apiUser,
+                infamyAmount: infamyToRemove,
+                successful: [],
+                error: [],
+                addInfamy: false
+            };
             for (const username of usernames) {
                 try {
                     const robloxId = await noblox.getIdFromUsername(username);
                     if (robloxId) {
                         await this.removeInfamy(robloxId, infamyToRemove);
                     }
+                    result.successful.push(username);
                 } catch (error) {
-                    errorMessages.push({
-                        username: username,
-                        message: error.message,
-                    });
+                    result.error.push(`${username} - ${error.message}`);
                 }
             }
-            return { errorMessages };
+            await infamyLogService.createDocument(result);
+            return result;
         } catch (error) {
             console.log(error.message);
         }
@@ -125,30 +151,62 @@ class InfamyService extends GenericService {
         try {
             const members = await this.getAllDocuments();
             const sortedMembers = members.sort((a, b) => b.infamy - a.infamy);
-            const topMembers = sortedMembers.slice(0, 10);
 
-            return topMembers.map(member => ({
-                username: member.username,
-                infamy: parseFloat(member.infamy.toString()),
+            const rankedMembers = await Promise.all(sortedMembers.map(async (member, index) => {
+                const username = await noblox.getUsernameFromId(member.robloxId);
+                return {
+                    rank: index + 1,
+                    username,
+                    robloxId: member.robloxId,
+                    headshotUrl: member.headshotUrl,
+                    infamy: parseFloat(member.infamy.toString()),
+                };
             }));
+
+            return rankedMembers;
         } catch (error) {
             throw new Error(`Error getting top infamy: ${error.message}`);
         }
     }
 
 
-    async getInfamyByUsername(username) {
+
+    async getInfamyAndRankByUsername(username) {
         try {
             const robloxId = await noblox.getIdFromUsername(username);
-            const member = await memberService.getDocumentByField({ robloxId: robloxId });
-            if (!member) {
+            const members = await memberService.getAllDocuments();
+            const sortedMembers = members.sort((a, b) => b.infamy - a.infamy);
+            const memberIndex = sortedMembers.findIndex((member) => member.robloxId === robloxId);
+
+            if (memberIndex === -1) {
                 throw new Error(`Member not found for username ${username}`);
             }
-            return member.infamy;
+
+
+
+            const member = sortedMembers[memberIndex];
+            const leaderboardRank = memberIndex + 1
+            const currentInfamy = member.infamy;
+            const currentRankIndex = Object.values(Ranks).findIndex((infamyRequirement) => currentInfamy < infamyRequirement);
+            const nextRank = Object.keys(Ranks)[currentRankIndex];
+            const infamyToGain = Ranks[nextRank] - currentInfamy;
+            const groupRank = await noblox.getRankNameInGroup(process.env.GROUPID, member.robloxId);
+            const groupRankNum = await noblox.getRankInGroup(process.env.GROUPID, member.robloxId);
+            let nextRankOutput = nextRank;
+            let infamyToGainString = infamyToGain.toString();
+            if(groupRankNum > 34) {
+                infamyToGainString = "NaN";
+                nextRankOutput = "NaN";
+            }
+            const updatedUsername = await noblox.getUsernameFromId(member.robloxId);
+            await memberService.updateDocumentById(member._id, member);
+
+            return { username: updatedUsername, groupRank: groupRank, nextGroupRank: nextRankOutput, robloxId: member.robloxId, infamy: currentInfamy.toString(), leaderboardrank: leaderboardRank, infamyToGain: infamyToGainString, headshotUrl: member.headshotUrl };
         } catch (error) {
             throw new Error(`Error getting infamy for username ${username}: ${error.message}`);
         }
     }
+
 
 
 

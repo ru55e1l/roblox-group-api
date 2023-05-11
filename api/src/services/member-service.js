@@ -1,6 +1,7 @@
 const Member = require('../models/member');
 const GenericService = require('./generic-service');
 const noblox = require('noblox.js');
+const axios = require('axios');
 
 class MemberService extends GenericService {
     constructor() {
@@ -50,6 +51,43 @@ class MemberService extends GenericService {
             }
         } catch(error) {
             throw error;
+        }
+    }
+
+    async getHeadshotUrl(robloxId) {
+        const thumbnailUrl = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${robloxId}&size=150x150&format=Png&isCircular=true`;
+        try {
+            const response = await axios.get(thumbnailUrl);
+            if (response.status === 200) {
+                const headshotUrl = response.data.data[0].imageUrl;
+                return headshotUrl;
+            } else {
+                throw new Error(`Error: ${response.status}`);
+            }
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+
+    async updateHeadshotUrls() {
+        // Find all members in the collection
+        const members = await Member.find({});
+
+        // Loop through each member and update the headshotUrl
+        for (const member of members) {
+            const headshotUrl = await this.getHeadshotUrl(member.robloxId);
+            member.infamy = member.infamy;
+            member.headshotUrl = headshotUrl;
+            await member.save();
+        }
+
+        console.log('All documents updated with headshotUrl');
+    }
+
+    async updateInfamyByUsername(membersData) {
+        for (const memberData of membersData) {
+            const { username, infamy } = memberData;
+            await Member.updateOne({ username }, { infamy });
         }
     }
 

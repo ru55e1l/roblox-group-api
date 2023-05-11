@@ -70,7 +70,7 @@ router.post('/bulkAddInfamy', auth, user, async (req, res) => {
             throw new Error("Invalid input: 'usernames' must be an array of strings and 'infamyToAdd' must be a number.");
         }
 
-        const result = await infamyService.bulkAddInfamy(usernames, infamyToAdd);
+        const result = await infamyService.bulkAddInfamy(req.user.username, usernames, infamyToAdd);
         res.status(200).json(result);
     } catch (error) {
         console.log(error.message);
@@ -138,7 +138,7 @@ router.post('/bulkRemoveInfamy', auth, user, async (req, res) => {
             throw new Error("Invalid input: 'usernames' must be an array of strings and 'infamyToRemove' must be a number.");
         }
 
-        const result = await infamyService.bulkRemoveInfamy(usernames, infamyToRemove);
+        const result = await infamyService.bulkRemoveInfamy(req.user.username, usernames, infamyToRemove);
         res.status(200).json(result);
     } catch (error) {
         console.log(error.message);
@@ -179,8 +179,8 @@ router.post('/bulkRemoveInfamy', auth, user, async (req, res) => {
  */
 router.get('/getInfamy/:username', auth, user, async (req, res) => {
     try {
-        const infamy = await infamyService.getInfamyByUsername(req.params.username);
-        res.status(200).json({ infamy });
+        const member = await infamyService.getInfamyAndRankByUsername(req.params.username);
+        res.status(200).json({ member });
     } catch (error) {
         console.log(error.message);
         res.status(500).json({ message: error.message });

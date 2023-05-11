@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const passportLocalMongoose = require('passport-local-mongoose');
 const noblox = require('noblox.js');
+const axios = require('axios');
 
 const member = new mongoose.Schema({
     username: {
@@ -31,10 +32,30 @@ const member = new mongoose.Schema({
         required: false,
         default: 0,
     },
+    headshotUrl: {
+        type: String,
+        required: false,
+    }
 });
+
+async function getHeadshotUrl(robloxId) {
+    const thumbnailUrl = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${robloxId}&size=48x48&format=Png&isCircular=true`;
+    try {
+        const response = await axios.get(thumbnailUrl);
+        if (response.status === 200) {
+            const thumbnailUrl = response.data.data[0].imageUrl;
+            return thumbnailUrl;
+        } else {
+            throw new Error(`Error: ${response.status}`);
+        }
+    } catch (error) {
+        console.error(error.message);
+    }
+}
 member.pre('save', async function (next) {
     this.infamy = 0;
     this.username = await noblox.getUsernameFromId(this.robloxId);
+    this.headshotUrl = await getHeadshotUrl(this.robloxId);
     next();
 });
 
