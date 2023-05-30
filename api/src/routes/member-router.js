@@ -3,6 +3,7 @@ const router = express.Router();
 const memberService = require('../services/member-service');
 const auth = require("../middleware/auth/auth");
 const { admin, user } = require("../middleware/auth/roles");
+const ccrService = require('../services/ccr-service');
 
 /**
  * @swagger
@@ -118,6 +119,63 @@ router.put('/update-infamy', auth, admin, async (req, res) => {
     } catch (error) {
         console.log(error.message);
         res.status(500).json({ message: error.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/member/getCCRHistory/{username}:
+ *   get:
+ *     summary: Get CCR history for a member by username
+ *     tags: [Member]
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         description: The username of the member to get CCR history for
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 evidence:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       timestamp:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       evidence:
+ *                         type: string
+ *                 accounts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       userid:
+ *                         type: string
+ *                       username:
+ *                         type: string
+ *       404:
+ *         description: Member not found
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/getCCRHistory/:username', async (req, res) => {
+    const username = req.params.username;
+    try {
+        const evidence = await ccrService.GetHistory(username);
+        res.status(200).json({evidence});
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 });
 

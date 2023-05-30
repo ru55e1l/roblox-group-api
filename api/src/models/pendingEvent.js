@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const passportLocalMongoose = require('passport-local-mongoose');
 const noblox = require('noblox.js');
 
-const event = new mongoose.Schema({
+const pendingEvent = new mongoose.Schema({
     eventDate: {
         type: Date,
         default: Date.now
@@ -16,15 +16,11 @@ const event = new mongoose.Schema({
         type: String,
         required: true
     },
-    attendeesSuccessful: {
+    usernames: {
         type: [String],
         required: true
     },
-    attendeesError: {
-        type: [String],
-        required: true
-    },
-    infamyGiven: {
+    infamyToAdd: {
         type: Number,
         required: true
     },
@@ -33,9 +29,9 @@ const event = new mongoose.Schema({
         required: true
     }
 });
-event.pre('save', async function (next) {
+pendingEvent.pre('save', async function (next) {
     next();
 });
 
-event.plugin(passportLocalMongoose);
-module.exports = mongoose.model('Event', event);
+pendingEvent.plugin(passportLocalMongoose);
+module.exports = mongoose.model('PendingEvent', pendingEvent);

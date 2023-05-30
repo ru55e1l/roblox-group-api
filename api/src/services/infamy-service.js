@@ -48,15 +48,15 @@ class InfamyService extends GenericService {
             let existingMember = await this.getDocumentByField({ robloxId: robloxId });
 
             if (!existingMember) {
-                if (await memberService.verifyUserInGroup(robloxId)) {
-                    const newMember = new Member({
-                        robloxId: robloxId,
-                    });
-                    existingMember = await memberService.createMember(newMember);
-                }
-                else {
+                const isUserInGroup = await memberService.verifyUserInGroup(robloxId);
+                if (!isUserInGroup) {
                     throw new Error("User is not in group");
                 }
+
+                const newMember = new Member({
+                    robloxId: robloxId,
+                });
+                existingMember = await memberService.createMember(newMember);
             }
 
             // Parse infamyToAdd as a number
@@ -66,6 +66,7 @@ class InfamyService extends GenericService {
             await this.updateRankBasedOnInfamy(robloxId, existingMember.infamy);
             return await this.updateDocumentById(existingMember.id, existingMember);
         } catch (error) {
+            console.error(`Error in addInfamy for robloxId ${robloxId}: ${error}`);
             throw error;
         }
     }
@@ -100,22 +101,21 @@ class InfamyService extends GenericService {
             for (const username of usernames) {
                 try {
                     const robloxId = await noblox.getIdFromUsername(username);
-                    if(robloxId) {
-                        await this.addInfamy(robloxId, infamyToAdd);
-                        result.successful.push(username);
+                    if (robloxId == null) {
+                        throw Error('User does not exist');
                     }
-                    else {
-                        throw Error("User does not exist")
-                    }
-
+                    await this.addInfamy(robloxId, infamyToAdd);
+                    result.successful.push(username);
                 } catch (error) {
+                    console.error(`Error while processing user ${username}: ${error}`);
                     result.error.push(`${username} - ${error.message}`);
                 }
             }
             await infamyLogService.createDocument(result);
-            return result ;
+            return result;
         } catch (error) {
-            console.log(error.message);
+            console.error(`Error in bulkAddInfamy: ${error}`);
+            throw error;
         }
     }
 
@@ -131,9 +131,10 @@ class InfamyService extends GenericService {
             for (const username of usernames) {
                 try {
                     const robloxId = await noblox.getIdFromUsername(username);
-                    if (robloxId) {
-                        await this.removeInfamy(robloxId, infamyToRemove);
+                    if (robloxId == null) {
+                        throw Error('User does not exist');
                     }
+                    await this.removeInfamy(robloxId, infamyToRemove);
                     result.successful.push(username);
                 } catch (error) {
                     result.error.push(`${username} - ${error.message}`);
@@ -143,6 +144,7 @@ class InfamyService extends GenericService {
             return result;
         } catch (error) {
             console.log(error.message);
+            throw error;
         }
     }
 
@@ -152,16 +154,25 @@ class InfamyService extends GenericService {
             const members = await this.getAllDocuments();
             const sortedMembers = members.sort((a, b) => b.infamy - a.infamy);
 
-            const rankedMembers = await Promise.all(sortedMembers.map(async (member, index) => {
-                const username = await noblox.getUsernameFromId(member.robloxId);
-                return {
-                    rank: index + 1,
-                    username,
-                    robloxId: member.robloxId,
-                    headshotUrl: member.headshotUrl,
-                    infamy: parseFloat(member.infamy.toString()),
-                };
-            }));
+            const top10Members = sortedMembers.slice(0, 10); // Get only the top 10 members
+
+            const rankedMembers = (await Promise.all(top10Members.map(async (member, index) => {
+                try {
+                    const username = await noblox.getUsernameFromId(member.robloxId);
+                    return {
+                        rank: index + 1,
+                        username,
+                        robloxId: member.robloxId,
+                        headshotUrl: member.headshotUrl,
+                        infamy: parseFloat(member.infamy.toString()),
+                    };
+                } catch (err) {
+                    console.error(`Error retrieving username for robloxId ${member.robloxId}. ${err}`);
+                    return null; // Return null in case of error
+                }
+            }))).filter(member => member !== null); // Filter out null values
+
+
 
             return rankedMembers;
         } catch (error) {
@@ -174,6 +185,19 @@ class InfamyService extends GenericService {
     async getInfamyAndRankByUsername(username) {
         try {
             const robloxId = await noblox.getIdFromUsername(username);
+            let existingMember = await this.getDocumentByField({ robloxId: robloxId });
+
+            if (!existingMember) {
+                if (await memberService.verifyUserInGroup(robloxId)) {
+                    const newMember = new Member({
+                        robloxId: robloxId,
+                    });
+                    existingMember = await memberService.createMember(newMember);
+                }
+                else {
+                    throw new Error("User is not in group");
+                }
+            }
             const members = await memberService.getAllDocuments();
             const sortedMembers = members.sort((a, b) => b.infamy - a.infamy);
             const memberIndex = sortedMembers.findIndex((member) => member.robloxId === robloxId);
@@ -199,6 +223,8 @@ class InfamyService extends GenericService {
                 nextRankOutput = "NaN";
             }
             const updatedUsername = await noblox.getUsernameFromId(member.robloxId);
+            member.username = updatedUsername;
+            member.headshotUrl = await memberService.getHeadshotUrl(robloxId);
             await memberService.updateDocumentById(member._id, member);
 
             return { username: updatedUsername, groupRank: groupRank, nextGroupRank: nextRankOutput, robloxId: member.robloxId, infamy: currentInfamy.toString(), leaderboardrank: leaderboardRank, infamyToGain: infamyToGainString, headshotUrl: member.headshotUrl };
