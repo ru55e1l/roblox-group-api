@@ -113,12 +113,16 @@ router.post("/logEvent", [auth, user], async (req, res) => {
  *               victory:
  *                 type: boolean
  *                 description: did you win
+ *               screenshot:
+ *                 type: string
+ *                 description: Screenshot of the event
  *             required:
  *               - usernames
  *               - infamyToAdd
  *               - eventType
  *               - host
  *               - victory
+ *               - screenshot
  *     responses:
  *       200:
  *         description: Pending event logged successfully
@@ -129,13 +133,14 @@ router.post("/logEvent", [auth, user], async (req, res) => {
  */
 router.post("/logPendingEvent", [auth, user], async (req, res) => {
     try {
-        await pendingEventService.LogPendingEvent(req.body);
-        res.status(200).send("Pending event logged successfully");
+        result = await pendingEventService.LogPendingEvent(req.body);
+        res.status(200).json(result);
     } catch (err) {
         console.error(err);
         res.status(500).send(err.message);
     }
 });
+
 
 
 
@@ -177,6 +182,129 @@ router.get("/getEventsAttendedByUsername/:username", [auth, user], async (req, r
         res.status(500).send(err.message);
     }
 });
+
+/**
+ * @swagger
+ * /api/Event/createEventFromPending/{pendingEventId}:
+ *   post:
+ *     summary: Creates a new event from a pending event
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: pendingEventId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the pending event
+ *     responses:
+ *       200:
+ *         description: New event created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Event'
+ *       400:
+ *         description: Invalid request body
+ *       404:
+ *         description: Pending event not found
+ *       500:
+ *         description: Internal Server Error
+ */
+
+router.post("/createEventFromPending/:pendingEventId", [auth, user], async (req, res) => {
+    try {
+        const newEvent = await pendingEventService.createEventFromPendingEvent(req.params.pendingEventId);
+        res.status(200).send("Success");
+    } catch (err) {
+        console.error(err);
+        res.status(500).send(err.message);
+    }
+});
+
+/**
+ * @swagger
+ * /api/Event/getEventsHostedByUsername/{username}:
+ *   get:
+ *     summary: Retrieves the count of all events and each type of event hosted by a user
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Username of the host
+ *     responses:
+ *       200:
+ *         description: Event count successfully retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalCount:
+ *                   type: integer
+ *                   description: The total number of events hosted by the user
+ *                 raidCount:
+ *                   type: integer
+ *                   description: The count of 'Raid' events hosted by the user
+ *                 defenseCount:
+ *                   type: integer
+ *                   description: The count of 'Defense' events hosted by the user
+ *                 gameNightCount:
+ *                   type: integer
+ *                   description: The count of 'GameNight' events hosted by the user
+ *       400:
+ *         description: Invalid username
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get("/getEventsHostedByUsername/:username", async (req, res) => {
+    try {
+        const eventCounts = await eventService.getEventsHostedByUsername(req.params.username);
+        res.status(200).json(eventCounts);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send(err.message);
+    }
+});
+
+/**
+ * @swagger
+ * /api/Event/getAllPendingEvents:
+ *   get:
+ *     summary: Retrieves all pending events
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of all pending events
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/PendingEvent'
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get("/getAllPendingEvents", [auth, user], async (req, res) => {
+    try {
+        const pendingEvents = await pendingEventService.getAllPendingEvents();
+        res.status(200).json(pendingEvents);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send(err.message);
+    }
+});
+
+
+
 
 
 module.exports = router;

@@ -25,7 +25,8 @@ class EventService extends GenericService {
                     return await noblox.getIdFromUsername(username);
                 })),
                 infamyGiven: data.infamyToAdd,
-                victory: data.victory
+                victory: data.victory,
+                screenshot: data.screenshot
             };
 
             await this.createDocument(dto);
@@ -45,13 +46,81 @@ class EventService extends GenericService {
                 attendeesSuccessful: userId
             });
 
-            return eventsAttended;
+            // Initialize counts
+            let totalCount = eventsAttended.length;
+            let raidCount = 0;
+            let defenseCount = 0;
+            let gameNightCount = 0;
+
+            // Count event types
+            eventsAttended.forEach(event => {
+                switch(event.eventType) {
+                    case 'Raid':
+                        raidCount++;
+                        break;
+                    case 'Defense':
+                        defenseCount++;
+                        break;
+                    case 'Gamenight':
+                        gameNightCount++;
+                        break;
+                }
+            });
+
+            return {
+                totalCount,
+                raidCount,
+                defenseCount,
+                gameNightCount,
+                eventsAttended
+            };
         } catch (err) {
             console.error(err);
             // handle the error as needed
         }
     }
 
+    async getEventsHostedByUsername(username) {
+        try {
+            const userId = await noblox.getIdFromUsername(username);
+            // Find events where the user was the host
+            const eventsHosted = await Event.find({
+                host: userId
+            });
+
+            // Initialize counts
+            let totalCount = eventsHosted.length;
+            let raidCount = 0;
+            let defenseCount = 0;
+            let gameNightCount = 0;
+
+            // Count event types
+            eventsHosted.forEach(event => {
+                switch(event.eventType) {
+                    case 'Raid':
+                        raidCount++;
+                        break;
+                    case 'Defense':
+                        defenseCount++;
+                        break;
+                    case 'Gamenight':
+                        gameNightCount++;
+                        break;
+                }
+            });
+
+            return {
+                totalCount,
+                raidCount,
+                defenseCount,
+                gameNightCount,
+                eventsHosted
+            };
+        } catch (err) {
+            console.error(err);
+            // handle the error as needed
+        }
+    }
 
 }
 

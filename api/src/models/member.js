@@ -32,6 +32,16 @@ const member = new mongoose.Schema({
         required: false,
         default: 0,
     },
+    prestigeCount: {
+        type: Number,
+        required: false,
+        default: 0
+    },
+    totalInfamy: {
+        type: mongoose.Decimal128,
+        required: false,
+        default: 0,
+    },
     headshotUrl: {
         type: String,
         required: false,
@@ -53,7 +63,6 @@ async function getHeadshotUrl(robloxId) {
     }
 }
 member.pre('save', async function (next) {
-    this.infamy = 0;
     this.username = await noblox.getUsernameFromId(this.robloxId);
     this.headshotUrl = await getHeadshotUrl(this.robloxId);
     next();

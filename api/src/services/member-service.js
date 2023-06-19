@@ -23,6 +23,21 @@ class MemberService extends GenericService {
         }
     }
 
+    async resetInfamyAndPrestige() {
+        try {
+            const members = await Member.find({});
+            for (let member of members) {
+                member.infamy = member.totalInfamy;
+                member.prestigeCount = 0;
+                await member.save();
+            }
+            console.log('Successfully updated all members.');
+        } catch (err) {
+            console.error('An error occurred while updating all members:', err);
+        }
+    }
+
+
     async verifyMember(robloxId) {
         try {
             const existingMember = await this.getDocumentByField({robloxId: robloxId});

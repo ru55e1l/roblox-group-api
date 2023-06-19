@@ -5,37 +5,47 @@ const noblox = require('noblox.js');
 const event = new mongoose.Schema({
     eventDate: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        unique: false,
     },
     eventType: {
         type: String,
         enum: ['Raid', 'Defense', 'Gamenight'],
-        required: true
+        required: true,
+        unique: false,
     },
     host: {
         type: String,
-        required: true
+        required: true,
+        unique: false,
     },
     attendeesSuccessful: {
         type: [String],
-        required: true
+        required: true,
+        unique: false,
     },
     attendeesError: {
         type: [String],
-        required: true
+        required: true,
+        unique: false,
     },
     infamyGiven: {
         type: Number,
-        required: true
+        required: true,
+        unique: false,
     },
     victory: {
         type: Boolean,
-        required: true
+        required: true,
+        unique: false,
+    },
+    screenshot: {
+        type: String,
+        required: true,
+        unique: false,
     }
 });
 event.pre('save', async function (next) {
     next();
 });
-
-event.plugin(passportLocalMongoose);
 module.exports = mongoose.model('Event', event);

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const infamyService = require('../services/infamy-service');
+const infamyLogService = require('../services/infamyLog-service');
 const auth = require("../middleware/auth/auth");
 const { admin, user } = require("../middleware/auth/roles");
 
@@ -27,6 +28,9 @@ const { admin, user } = require("../middleware/auth/roles");
  *           schema:
  *             type: object
  *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The username making the request. Defaults to the username of the authenticated user.
  *               usernames:
  *                 type: array
  *                 items:
@@ -62,21 +66,22 @@ const { admin, user } = require("../middleware/auth/roles");
  *       500:
  *         description: Internal Server Error
  */
-router.post('/bulkAddInfamy', auth, user, async (req, res) => {
+router.post('/bulkAddInfamy', auth, async (req, res) => {
     try {
-        const { usernames, infamyToAdd } = req.body;
+        const { username = req.user.username, usernames, infamyToAdd } = req.body;
 
         if (!Array.isArray(usernames) || usernames.some(username => typeof username !== 'string') || typeof infamyToAdd !== 'number') {
             throw new Error("Invalid input: 'usernames' must be an array of strings and 'infamyToAdd' must be a number.");
         }
 
-        const result = await infamyService.bulkAddInfamy(req.user.username, usernames, infamyToAdd);
+        const result = await infamyService.bulkAddInfamy(username, usernames, infamyToAdd);
         res.status(200).json(result);
     } catch (error) {
         console.log(error.message);
         res.status(500).json({ message: error.message });
     }
 });
+
 
 
 /**
@@ -224,6 +229,54 @@ router.get('/top', auth, user, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/infamy/getLatestTenLogs:
+ *   get:
+ *     summary: Retrieve the latest 10 infamy logs
+ *     tags: [Infamy]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the latest 10 infamy logs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                   infamyAmount:
+ *                     type: number
+ *                     format: float
+ *                   successful:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   error:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   addInfamy:
+ *                     type: boolean
+ *                   logDate:
+ *                     type: string
+ *                     format: date-time
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/getLatestTenLogs', auth, async (req, res) => {
+    try {
+        const logs = await infamyLogService.getLatestTenLogs();
+        res.status(200).json(logs);
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({ message: error.message });
+    }
+});
 
 
 

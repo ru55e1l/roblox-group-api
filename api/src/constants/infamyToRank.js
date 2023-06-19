@@ -1,6 +1,7 @@
 const Ranks = {
-    Privateer: 0,
-    Enforcer: 25,
+    Choreboy: 0,
+    Privateer: 25,
+    Enforcer: 50,
     Reaver: 130,
     "Cut Throat": 220,
     Buccaneer: 320,

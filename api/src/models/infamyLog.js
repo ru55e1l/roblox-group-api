@@ -33,6 +33,4 @@ infamyLog.pre('save', async function (next) {
     next();
 });
 
-
-infamyLog.plugin(passportLocalMongoose);
 module.exports = mongoose.model('InfamyLog', infamyLog);

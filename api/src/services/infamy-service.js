@@ -17,7 +17,7 @@ class InfamyService extends GenericService {
         const infamyDecimal = new mongoose.Types.Decimal128(infamy.toString());
 
         if (currentRank < 34) {
-            let newRankName = "Privateer";
+            let newRankName = "Choreboy";
 
             for (const [rankName, rankInfamy] of Object.entries(Ranks)) {
                 if (parseFloat(infamyDecimal.toString()) >= rankInfamy) {
@@ -79,15 +79,13 @@ class InfamyService extends GenericService {
                 throw new Error(`Member not found`);
             }
             const parsedInfamyToRemove = parseFloat(infamyToRemove);
-            existingMember.infamy = Math.max(0, parseFloat(existingMember.infamy) - parsedInfamyToRemove);
+            existingMember.infamy = parseFloat(existingMember.infamy) - parsedInfamyToRemove;
             await this.updateRankBasedOnInfamy(robloxId, existingMember.infamy);
             return await this.updateDocumentById(existingMember.id, existingMember);
         } catch (error) {
             throw error;
         }
     }
-
-
 
     async bulkAddInfamy(apiUser, usernames, infamyToAdd) {
         try {
